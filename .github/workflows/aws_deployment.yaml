@@ -65,7 +65,7 @@ jobs:
           run: 'aws_region="${{ secrets.AWS_REGION }}" >> ${{ env.tf_working_dir }}/variables.tfvars;'
 
         - name: Copy backend data to backend.tf
-          run: 'echo "${{ secrets.BACKEND_TF }}"" >> ${{ env.tf_working_dir }}/backend.tf'
+          run: 'echo "${{ secrets.BACKEND_TF }}" >> ${{ env.tf_working_dir }}/backend.tf'
 
         - name: 'Terraform Init'
           uses: hashicorp/terraform-github-actions@master
