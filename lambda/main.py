@@ -7,7 +7,7 @@ from twilio.rest import Client
 http = PoolManager()
 secretsManagerClient = boto3.client(
     'secretsmanager',
-    region_name=os.environ['AWS_REGION']
+    region_name=os.environ['REGION']
 )
 twilioClient = Client(
     secretsManagerClient.get_secret_value(

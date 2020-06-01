@@ -62,7 +62,7 @@ resource "aws_lambda_function" "barber_lambda" {
 
   environment {
     variables = {
-      AWS_REGION = var.aws_region
+      REGION = var.aws_region
     }
   }
 }
