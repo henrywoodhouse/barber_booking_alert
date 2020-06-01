@@ -74,7 +74,7 @@ jobs:
             tf_actions_subcommand: 'init'
             tf_actions_working_dir: ${{ env.tf_working_dir }}
             tf_actions_comment: false
-            args: '-var-file="variables.tfvars"'
+            args: '-var-file="${{ env.tf_working_dir }}/variables.tfvars"'
 
         - name: 'Terraform Apply'
           uses: hashicorp/terraform-github-actions@master
@@ -83,4 +83,4 @@ jobs:
             tf_actions_subcommand: 'apply'
             tf_actions_working_dir: ${{ env.tf_working_dir }}
             tf_actions_comment: false
-            args: '-var-file="variables.tfvars"'
+            args: "-var 'aws_region=${{ secrets.AWS_REGION }}' -var 'aws_account=${{ secrets.AWS_ACCOUNT_ID }}'"
