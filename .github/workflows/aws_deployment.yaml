@@ -1,0 +1,80 @@
+name: AWS Deployment
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  tf_version: 'latest'
+  tf_working_dir: '.'
+
+jobs:
+  build:
+    name: AwsDeploy
+    runs-on: ubuntu-latest
+    steps:
+        - name: Checkout
+          uses: actions/checkout@v2
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: ${{ secrets.AWS_REGION }}
+    
+        - name: Write Twilio Auth Token to AWS Secrets Manager
+          run: |
+            aws secretsmanager put-secret-value --secret-id TWILIO_AUTH_TOKEN --secret-string ${{ secrets.TWILIO_AUTH_TOKEN }}
+        
+        - name: Write Twilio Account Sid to AWS Secrets Manager
+          run: |
+            aws secretsmanager put-secret-value --secret-id TWILIO_ACCOUNT_SID --secret-string ${{ secrets.TWILIO_ACCOUNT_SID }}
+
+        - name: Write Twilio Phone Number to AWS Secrets Manager
+          run: |
+            aws secretsmanager put-secret-value --secret-id TWILIO_PHONE_NUMBER --secret-string ${{ secrets.TWILIO_PHONE_NUMBER }}
+
+        - name: Write User Phone Numbers to AWS Secrets Manager
+          run: |
+            aws secretsmanager put-secret-value --secret-id USER_PHONE_NUMBERS --secret-string ${{ secrets.USER_PHONE_NUMBERS }}
+
+        - name: Install wheel package
+          run: python -m pip install wheel
+
+        - name: Download Twilio package
+          run: python -m pip install --system -t  ${{ env.tf_working_dir }}/lambda/package twilio
+
+        - name: Zip the Twilio packages
+          run: zip -r ../lambda_function_payload.zip . 
+          working-directory: ${{ env.tf_working_dir }}/lambda/package
+          
+        - name: Add main.py to the zip
+          run: zip lambda_function_payload.zip main.py
+          working-directory: ${{ env.tf_working_dir }}/lambda
+
+        - name: Add stores.csv to the zip
+          run: zip lambda_function_payload.zip stores.csv
+          working-directory: ${{ env.tf_working_dir }}/lambda
+
+        - name: Copy backend data to backend.tf
+          run: 'echo "${{ secrets.BACKEND_TF }}" >> ${{ env.tf_working_dir }}/backend.tf'
+
+        - name: 'Terraform Init'
+          uses: hashicorp/terraform-github-actions@master
+          with:
+            tf_actions_version: ${{ env.tf_version }}
+            tf_actions_subcommand: 'init'
+            tf_actions_working_dir: ${{ env.tf_working_dir }}
+            tf_actions_comment: false
+            args: "-var aws_region=${{ secrets.AWS_REGION }} -var aws_account=${{ secrets.AWS_ACCOUNT_ID }}"
+
+        - name: 'Terraform Apply'
+          uses: hashicorp/terraform-github-actions@master
+          with:
+            tf_actions_version: ${{ env.tf_version }}
+            tf_actions_subcommand: 'apply'
+            tf_actions_working_dir: ${{ env.tf_working_dir }}
+            tf_actions_comment: false
+            args: "-var aws_region=${{ secrets.AWS_REGION }} -var aws_account=${{ secrets.AWS_ACCOUNT_ID }}"
